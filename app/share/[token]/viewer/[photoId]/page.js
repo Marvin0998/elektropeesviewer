@@ -174,7 +174,16 @@ export default function ShareViewerPage() {
           </div>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:12}}>
-          <Link href={`/share/${token}`} style={{color:'var(--text-muted)',textDecoration:'none',fontSize:13}}>← {projectName}</Link>
+          <Link href={`/share/${token}`} style={{
+            display:'flex', alignItems:'center', gap:8,
+            background:'var(--bg3)', border:'1px solid var(--border)',
+            color:'var(--text)', textDecoration:'none',
+            padding:'8px 16px', borderRadius:10, fontSize:14, fontWeight:600,
+            transition:'all 0.15s'
+          }}>
+            <span style={{fontSize:20, lineHeight:1}}>←</span>
+            <span>{projectName}</span>
+          </Link>
           <div style={{background:'rgba(34,197,94,0.1)',border:'1px solid rgba(34,197,94,0.3)',color:'#22c55e',padding:'5px 12px',borderRadius:20,fontSize:12}}>👁 Nur-Lesen</div>
         </div>
       </nav>

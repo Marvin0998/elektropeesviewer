@@ -12,6 +12,7 @@ export default function SharePage() {
   const [photos, setPhotos]   = useState([])
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
+  const [shareLabel, setShareLabel] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -20,7 +21,7 @@ export default function SharePage() {
       // 1. Token in share_links suchen
       const { data: link, error: linkErr } = await supabase
         .from('share_links')
-        .select('project_id')
+        .select('project_id, label')
         .eq('token', token)
         .single()
 
@@ -35,6 +36,7 @@ export default function SharePage() {
 
       if (!proj) { setNotFound(true); setLoading(false); return }
       setProject(proj)
+      setShareLabel(link?.label || '')
 
       // 3. Fotos laden
       const { data: photoList } = await supabase
@@ -88,10 +90,18 @@ export default function SharePage() {
       </nav>
 
       <main className="page">
-        <div style={{ marginBottom:32 }}>
-          <h1 style={{ fontSize:28, fontWeight:700 }}>📁 {project.name}</h1>
-          {project.description && <p style={{ color:'var(--text-muted)', marginTop:6 }}>{project.description}</p>}
-          <p style={{ fontSize:13, color:'var(--text-muted)', marginTop:8 }}>{photos.length} Fotos · Geteilt von Elektro Pees</p>
+        {/* Willkommens-Header */}
+        <div style={{ marginBottom:40, padding:'28px 32px', background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:14, borderLeft:'4px solid var(--accent)' }}>
+          <div style={{ fontSize:13, color:'var(--text-muted)', marginBottom:6, textTransform:'uppercase', letterSpacing:'0.08em', fontWeight:500 }}>Willkommen</div>
+          <h1 style={{ fontSize:26, fontWeight:700, marginBottom:6 }}>
+            {shareLabel || 'Ihr Projekt'}
+          </h1>
+          <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:8 }}>
+            <span style={{ fontSize:14, color:'var(--text-muted)' }}>📁</span>
+            <span style={{ fontSize:15, fontWeight:600 }}>{project.name}</span>
+            {project.description && <span style={{ fontSize:13, color:'var(--text-muted)' }}>· {project.description}</span>}
+          </div>
+          <p style={{ fontSize:13, color:'var(--text-muted)', marginTop:10 }}>{photos.length} {photos.length===1?'Foto':'Fotos'} · Bereitgestellt von Elektro Pees</p>
         </div>
 
         {photos.length === 0 ? (
