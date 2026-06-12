@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase'
 import Navbar from '@/components/Navbar'
 
 const TOOLS = [
-  { id: 'select',  icon: '↖', label: 'Drehen / Auswählen' },
+  { id: 'select',  icon: '🌐', label: 'Drehen / Auswählen' },
   { id: 'measure', icon: '↔', label: 'Bemaßung' },
   { id: 'arrow',   icon: '➜', label: 'Pfeil' },
   { id: 'line',    icon: '╱', label: 'Linie' },
