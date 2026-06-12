@@ -1,0 +1,11 @@
+# Abhängigkeiten (werden mit npm install neu erstellt)
+node_modules/
+.next/
+
+# Geheime Konfiguration — NIEMALS hochladen!
+.env.local
+.env
+
+# System-Dateien
+.DS_Store
+Thumbs.db
