@@ -7,8 +7,18 @@ import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import Navbar from '@/components/Navbar'
 
+const SelectIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M 8 18 A 10 10 0 0 1 28 18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+    <polygon points="28,18 23,13 32,12" fill="currentColor"/>
+    <path d="M 28 18 A 10 10 0 0 1 8 18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+    <polygon points="8,18 13,23 4,24" fill="currentColor"/>
+    <text x="18" y="21" textAnchor="middle" fill="currentColor" fontSize="8" fontWeight="bold" fontFamily="Arial,sans-serif">360°</text>
+  </svg>
+)
+
 const TOOLS = [
-  { id: 'select',  icon: '🌐', label: 'Drehen / Auswählen' },
+  { id: 'select',  icon: <SelectIcon />, label: 'Drehen / Auswählen' },
   { id: 'measure', icon: '↔', label: 'Bemaßung' },
   { id: 'arrow',   icon: '➜', label: 'Pfeil' },
   { id: 'line',    icon: '╱', label: 'Linie' },
@@ -483,7 +493,8 @@ export default function ViewerPage() {
   }
 
   const previewData = drawing ? getPreviewSegments() : null
-  const isDrawTool  = activeTool !== 'select' && activeTool !== 'note'
+  // Note-Modus braucht auch pointer-events damit Klick erfasst wird
+  const isDrawTool  = activeTool !== 'select'
 
   // Notizen
   function openEditNote(note) {
