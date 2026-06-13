@@ -563,6 +563,21 @@ export default function ViewerPage() {
 
         {/* Viewer */}
         <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+
+          {/* Zurück-Button oben links */}
+          <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 30 }}>
+            <Link href={`/project/${photo.projects?.id}`} style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              background: 'rgba(0,0,0,0.7)', color: 'white',
+              padding: '8px 16px', borderRadius: 10,
+              fontSize: 14, fontWeight: 600, textDecoration: 'none',
+              backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.15)'
+            }}>
+              <span style={{ fontSize: 18, lineHeight: 1 }}>←</span>
+              <span>{photo.projects?.name || 'Zurück'}</span>
+            </Link>
+          </div>
+
           <div style={{
             position: 'absolute', bottom: 12, left: '50%', transform: 'translateX(-50%)',
             background: 'rgba(0,0,0,0.65)', color: 'white', padding: '6px 16px',
