@@ -504,8 +504,11 @@ export default function ViewerPage() {
             <h2 className="modal-title">{pendingAnnotation?.type==='measure'?'↔ Maß eingeben':pendingAnnotation?.type==='arrow'?'➜ Pfeil beschriften':'T Text eingeben'}</h2>
             <form onSubmit={confirmLabel}>
               <div className="form-group">
-                <label className="label">{pendingAnnotation?.type==='measure'?'Maßangabe (z.B. 2,40 m)':'Text'}</label>
-                <input className="input" placeholder={pendingAnnotation?.type==='measure'?'z.B. 2,40 m':'Text eingeben...'} value={labelValue} onChange={e=>setLabelValue(e.target.value)} autoFocus/>
+                <label className="label">{pendingAnnotation?.type==='measure'?'Maßangabe (z.B. 2,40 m)':'Text (Enter = neue Zeile)'}</label>
+                {pendingAnnotation?.type==='measure'
+                  ? <input className="input" placeholder="z.B. 2,40 m" value={labelValue} onChange={e=>setLabelValue(e.target.value)} autoFocus/>
+                  : <textarea className="input" placeholder="Text eingeben..." value={labelValue} onChange={e=>setLabelValue(e.target.value)} autoFocus rows={3} style={{resize:'vertical'}}/>
+                }
               </div>
               <div className="form-row">
                 <button type="button" className="btn btn-outline" onClick={()=>{setShowLabelInput(false);setPendingAnnotation(null)}}>Abbrechen</button>
@@ -570,8 +573,8 @@ export default function ViewerPage() {
             <h2 className="modal-title">✎ Text bearbeiten</h2>
             <form onSubmit={saveTextEdit}>
               <div className="form-group">
-                <label className="label">Text</label>
-                <input className="input" value={editTextLabel} onChange={e=>setEditTextLabel(e.target.value)} autoFocus/>
+                <label className="label">Text (Enter = neue Zeile)</label>
+                <textarea className="input" value={editTextLabel} onChange={e=>setEditTextLabel(e.target.value)} autoFocus rows={4} style={{resize:'vertical'}}/>
               </div>
               <div className="form-group">
                 <label className="label">Schriftfarbe</label>

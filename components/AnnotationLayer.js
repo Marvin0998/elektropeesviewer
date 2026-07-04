@@ -124,12 +124,17 @@ export function AnnShape({item,isPreview=false,selected=false,onClick,onDoubleCl
     if(!start||!label)return null
     const fontSize=data?.size||15
     const bg=data?.bg||'rgba(0,0,0,0.85)'
-    const w=label.length*fontSize*0.62+16
+    const lines=label.split('\n')
+    const lineH=fontSize*1.3
+    const maxW=Math.max(...lines.map(l=>l.length))*fontSize*0.62+16
+    const totalH=lines.length*lineH+8
     return<g key={id||'prev'} {...props} opacity={opacity}>
-      {selected&&<rect x={start.x-6} y={start.y-fontSize-8} width={w+8} height={fontSize+16} rx={7} fill="#4f6ef7" opacity={0.3}/>}
-      <rect x={start.x-4} y={start.y-fontSize-4} width={w} height={fontSize+12} rx={5} fill={bg}/>
-      <text x={start.x+4} y={start.y+4} fill={color} fontSize={fontSize} fontWeight={700} fontFamily="Inter,sans-serif">{label}</text>
-      {selected&&<text x={start.x} y={start.y-fontSize-14} fill="rgba(255,255,255,0.7)" fontSize={10} fontFamily="Inter,sans-serif">✎ Doppelklick = bearbeiten</text>}
+      {selected&&<rect x={start.x-6} y={start.y-6} width={maxW+8} height={totalH+8} rx={7} fill="#4f6ef7" opacity={0.3}/>}
+      <rect x={start.x-4} y={start.y-4} width={maxW} height={totalH} rx={5} fill={bg}/>
+      {lines.map((line,i)=>(
+        <text key={i} x={start.x+4} y={start.y+fontSize+i*lineH} fill={color} fontSize={fontSize} fontWeight={700} fontFamily="Inter,sans-serif">{line}</text>
+      ))}
+      {selected&&<text x={start.x} y={start.y-12} fill="rgba(255,255,255,0.7)" fontSize={10} fontFamily="Inter,sans-serif">✎ Bearbeiten</text>}
     </g>
   }
 
