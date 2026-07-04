@@ -76,8 +76,9 @@ export function useProjection(pannellumRef, viewerRef, annotations, viewerSize) 
 }
 
 export function AnnShape({item,isPreview=false,selected=false,onClick,onDoubleClick}){
-  const{segments,midScreen,start,end,color,type,label,id,rectCorners,data}=item
-  const opacity = data?.opacity ?? 1
+  const{segments,midScreen,start,end,color,type,label,id,rectCorners}=item
+  const data = item.data || {}
+  const opacity = data.opacity ?? 1
   const sw=selected?3:2
   const dash=isPreview?'8 4':undefined
   const props={onClick,onDoubleClick,style:onClick?{cursor:'pointer'}:{}}
@@ -132,6 +133,8 @@ export function AnnShape({item,isPreview=false,selected=false,onClick,onDoubleCl
     </g>
   }
 
+  // Text and rect already returned above — only lines reach here
+  if(type==='text'||type==='rect') return null
   if(!segments||segments.length===0)return null
 
   return<g key={id||'prev'} {...props} opacity={opacity}>

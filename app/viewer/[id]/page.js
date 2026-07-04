@@ -397,7 +397,7 @@ export default function ViewerPage() {
           />
 
           <svg
-            style={{position:'absolute',inset:0,width:'100%',height:'100%',zIndex:20,pointerEvents:'all',cursor:cursorStyle}}
+            style={{position:'absolute',inset:0,width:'100%',height:'100%',zIndex:20,pointerEvents:isDrawTool||draggingText?'all':'none',cursor:cursorStyle}}
             onMouseDown={e=>{
               if(activeTool==='select'&&!draggingText) return
               handleMouseDown(e)
@@ -551,7 +551,7 @@ export default function ViewerPage() {
               </div>
               {/* Live-Vorschau */}
               <div style={{marginBottom:16,padding:16,background:'repeating-linear-gradient(45deg,#333 0,#333 10px,#222 10px,#222 20px)',borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',minHeight:60}}>
-                <div style={{width:120,height:50,background:editRectColor,opacity:editRectFillOp,border:`2px solid ${editRectColor}`,borderRadius:4,display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontSize:12,fontWeight:700}}>{editRectLabel||'Vorschau'}</div>
+                <div style={{width:120,height:50,background:editRectColor,opacity:editRectFillOp,border:'2px solid '+editRectColor,borderRadius:4,display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontSize:12,fontWeight:700}}>{editRectLabel||'Vorschau'}</div>
               </div>
               <div className="form-row">
                 <button type="button" className="btn btn-danger" style={{marginRight:'auto'}} onClick={()=>{deleteAnnotation(editRectAnn.id);setShowRectEdit(false)}}>🗑 Löschen</button>
