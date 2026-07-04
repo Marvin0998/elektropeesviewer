@@ -351,8 +351,8 @@ export default function ViewerPage() {
           </div>
 
           <div style={{position:'absolute',bottom:12,left:'50%',transform:'translateX(-50%)',background:'rgba(0,0,0,0.65)',color:'white',padding:'6px 16px',borderRadius:20,fontSize:12,zIndex:30,whiteSpace:'nowrap',pointerEvents:'none'}}>
-            {activeTool==='select' && (selected && svgData.find(a=>a.id===selected&&a.type==='text')
-              ? 'Text: Doppelklick = bearbeiten · Ctrl+Ziehen = verschieben'
+            {activeTool==='select' && (selected && svgData.find(a=>a.id===selected&&(a.type==='text'||a.type==='rect'))
+              ? '→ Oben: ✎ Bearbeiten Button · Ctrl+Ziehen = Text verschieben'
               : 'Ziehen = Drehen · Annotation anklicken = auswählen')}
             {activeTool==='measure' &&'↔ Klicken & Ziehen → Bemaßungslinie'}
             {activeTool==='arrow'   &&'➜ Klicken & Ziehen → Pfeil'}
@@ -362,25 +362,81 @@ export default function ViewerPage() {
             {activeTool==='note'    &&'📌 Klicken → Pin setzen'}
           </div>
 
+          {/* Schwebender Bearbeiten-Button wenn Text/Rect ausgewählt */}
+          {selected && svgData.find(a=>a.id===selected&&(a.type==='text'||a.type==='rect')) && (
+            <div style={{position:'absolute',top:60,left:'50%',transform:'translateX(-50%)',zIndex:31,display:'flex',gap:8}}>
+              <button className="btn btn-primary" style={{fontSize:13,padding:'7px 16px',boxShadow:'0 2px 12px rgba(0,0,0,0.5)'}}
+                onClick={()=>{
+                  const ann=svgData.find(a=>a.id===selected)
+                  if(ann?.type==='text')openTextEdit(ann)
+                  else if(ann?.type==='rect')openRectEdit(ann)
+                }}>
+                ✎ Bearbeiten
+              </button>
+              <button className="btn btn-danger" style={{fontSize:13,padding:'7px 14px',boxShadow:'0 2px 12px rgba(0,0,0,0.5)'}}
+                onClick={()=>deleteAnnotation(selected)}>
+                🗑
+              </button>
+            </div>
+          )}
+
           <div ref={viewerRef} style={{width:'100%',height:'100%'}}
             onContextMenu={e=>{
-              // Rechtsklick auf selektierten Text → Drag-Modus
               if(selected && svgData.find(a=>a.id===selected&&a.type==='text')){e.preventDefault()}
+            }}
+          />
+          {/* Unsichtbarer Layer der Pannellum-Doppelklick-Zoom verhindert */}
+          <div
+            style={{position:'absolute',inset:0,zIndex:19,pointerEvents:'none'}}
+            onDoubleClick={e=>{
+              e.preventDefault()
+              e.stopPropagation()
+              // Prüfen ob ein Text oder Rect unter dem Cursor ist
+              const ann = svgData.find(a=>(a.type==='text'||a.type==='rect')&&a.start&&Math.hypot((a.start.x||0)-e.clientX+viewerRef.current?.getBoundingClientRect().left,(a.start.y||0)-e.clientX)<80)
             }}
           />
 
           <svg
-            style={{position:'absolute',inset:0,width:'100%',height:'100%',zIndex:20,pointerEvents:(isDrawTool||draggingText)?'all':'none',cursor:cursorStyle}}
-            onMouseDown={handleMouseDown}
+            style={{position:'absolute',inset:0,width:'100%',height:'100%',zIndex:20,pointerEvents:'all',cursor:cursorStyle}}
+            onMouseDown={e=>{
+              if(activeTool==='select'&&!draggingText) return
+              handleMouseDown(e)
+            }}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
+            onDoubleClick={e=>{
+              e.preventDefault()
+              e.stopPropagation()
+              // Doppelklick: prüfe ob Text/Rect getroffen
+              const rect=viewerRef.current?.getBoundingClientRect()
+              if(!rect) return
+              const hit=svgData.find(a=>{
+                if(a.type==='text'&&a.start){
+                  const fontSize=a.data?.size||15
+                  const w=(a.label||'').length*fontSize*0.62+16
+                  return e.clientX>=rect.left+a.start.x-4&&e.clientX<=rect.left+a.start.x+w&&e.clientY>=rect.top+a.start.y-fontSize-4&&e.clientY<=rect.top+a.start.y+fontSize+12
+                }
+                if(a.type==='rect'&&a.rectCorners){
+                  const xs=a.rectCorners.map(p=>p.x),ys=a.rectCorners.map(p=>p.y)
+                  const mx=e.clientX-rect.left,my=e.clientY-rect.top
+                  return mx>=Math.min(...xs)&&mx<=Math.max(...xs)&&my>=Math.min(...ys)&&my<=Math.max(...ys)
+                }
+                return false
+              })
+              if(hit){
+                if(hit.type==='text') openTextEdit(hit)
+                if(hit.type==='rect') openRectEdit(hit)
+              }
+            }}
             onContextMenu={e=>e.preventDefault()}
           >
+            {/* Transparenter Hintergrund damit Pannellum Events bekommt im Select-Modus */}
+            {activeTool==='select'&&!draggingText&&<rect x="0" y="0" width="100%" height="100%" fill="transparent" style={{pointerEvents:'none'}}/>}
             {/* Gespeicherte Annotations */}
             {svgData.map(item=>(
               <AnnShape key={item.id} item={item} selected={selected===item.id}
-                onClick={()=>setSelected(selected===item.id?null:item.id)}
-                onDoubleClick={item.type==='text'?()=>openTextEdit(item):item.type==='rect'?()=>openRectEdit(item):undefined}
+                onClick={(e)=>{if(e){e.stopPropagation()}; setSelected(selected===item.id?null:item.id)}}
+                onDoubleClick={undefined}
               />
             ))}
 
@@ -410,12 +466,12 @@ export default function ViewerPage() {
               :annotations.map(ann=>(
                 <div key={ann.id}
                   onClick={()=>{setSelected(selected===ann.id?null:ann.id)}}
-                  onDoubleClick={ann.type==='text'?()=>openTextEdit(ann):ann.type==='rect'?()=>openRectEdit(ann):undefined}
+
                   style={{padding:'9px 12px',marginBottom:6,borderRadius:8,cursor:'pointer',background:selected===ann.id?'var(--bg3)':'transparent',border:`1px solid ${selected===ann.id?'var(--accent)':'var(--border)'}`,display:'flex',alignItems:'center',gap:8}}>
                   <div style={{width:10,height:10,borderRadius:'50%',background:ann.color,flexShrink:0}}/>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:13,fontWeight:500}}>{ann.type==='measure'?'↔ ':ann.type==='arrow'?'➜ ':ann.type==='line'?'╱ ':ann.type==='rect'?'▭ ':'T '}{ann.label||<span style={{color:'var(--text-muted)',fontStyle:'italic'}}>kein Label</span>}</div>
-                    <div style={{fontSize:11,color:'var(--text-muted)'}}>{ann.type==='text'||ann.type==='rect'?'Doppelklick zum Bearbeiten':TOOLS.find(t=>t.id===ann.type)?.label}</div>
+                    <div style={{fontSize:11,color:'var(--text-muted)'}}>{ann.type==='text'||ann.type==='rect'?'Klick → dann ✎ Bearbeiten':TOOLS.find(t=>t.id===ann.type)?.label}</div>
                   </div>
                   <button onClick={e=>{e.stopPropagation();deleteAnnotation(ann.id)}} style={{background:'none',border:'none',color:'var(--text-muted)',cursor:'pointer',fontSize:14}}>🗑</button>
                 </div>
@@ -495,7 +551,7 @@ export default function ViewerPage() {
               </div>
               {/* Live-Vorschau */}
               <div style={{marginBottom:16,padding:16,background:'repeating-linear-gradient(45deg,#333 0,#333 10px,#222 10px,#222 20px)',borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',minHeight:60}}>
-                <div style={{width:120,height:50,background:editRectColor,opacity:editRectFillOp,border:\`2px solid \${editRectColor}\`,borderRadius:4,display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontSize:12,fontWeight:700}}>{editRectLabel||'Vorschau'}</div>
+                <div style={{width:120,height:50,background:editRectColor,opacity:editRectFillOp,border:`2px solid ${editRectColor}`,borderRadius:4,display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontSize:12,fontWeight:700}}>{editRectLabel||'Vorschau'}</div>
               </div>
               <div className="form-row">
                 <button type="button" className="btn btn-danger" style={{marginRight:'auto'}} onClick={()=>{deleteAnnotation(editRectAnn.id);setShowRectEdit(false)}}>🗑 Löschen</button>
