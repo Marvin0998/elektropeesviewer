@@ -46,6 +46,7 @@ export default function ViewerPage() {
   const [drawing, setDrawing]         = useState(null)
   const [drawStart, setDrawStart]     = useState(null)
   const [viewerSize, setViewerSize]   = useState({ w:800, h:600 })
+  const [showLabels, setShowLabels]   = useState(true)
 
   // Universal drag for any annotation
   const [draggingAnn, setDraggingAnn] = useState(null)   // { ann, startWorld }
@@ -360,6 +361,11 @@ export default function ViewerPage() {
           {COLORS.map(col=>(
             <button key={col} onClick={()=>setActiveColor(col)} style={{width:22,height:22,borderRadius:'50%',cursor:'pointer',outline:'none',background:col,border:activeColor===col?'2px solid white':'2px solid transparent',boxShadow:activeColor===col?'0 0 0 2px var(--accent)':'none'}}/>
           ))}
+          <div style={{width:32,height:1,background:'var(--border)',margin:'6px 0'}}/>
+          <button title={showLabels?'Labels ausblenden':'Labels einblenden'} onClick={()=>setShowLabels(v=>!v)} style={{width:40,height:40,borderRadius:8,border:'none',cursor:'pointer',background:showLabels?'transparent':'rgba(255,149,0,0.2)',color:showLabels?'var(--text-muted)':'#ff9500',fontSize:15,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',transition:'all 0.15s',position:'relative'}}>
+            <span style={{fontSize:13}}>T</span>
+            {!showLabels&&<span style={{position:'absolute',top:4,right:4,width:8,height:8,borderRadius:'50%',background:'#ff9500'}}/>}
+          </button>
           {selected&&<><div style={{width:32,height:1,background:'var(--border)',margin:'6px 0'}}/><button onClick={()=>deleteAnnotation(selected)} style={{width:40,height:40,borderRadius:8,border:'none',cursor:'pointer',background:'rgba(239,68,68,0.15)',color:'#ef4444',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center'}}>🗑</button></>}
         </div>
 
@@ -458,7 +464,7 @@ export default function ViewerPage() {
             {activeTool==='select'&&!draggingAnn&&<rect x="0" y="0" width="100%" height="100%" fill="transparent" style={{pointerEvents:'none'}}/>}
             {/* Gespeicherte Annotations */}
             {svgData.map(item=>(
-              <AnnShape key={item.id} item={item} selected={selected===item.id}
+              <AnnShape key={item.id} item={item} selected={selected===item.id} showLabels={showLabels}
                 onClick={(e)=>{if(e){e.stopPropagation()}; setSelected(selected===item.id?null:item.id)}}
                 onDoubleClick={undefined}
               />

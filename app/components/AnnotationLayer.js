@@ -75,7 +75,7 @@ export function useProjection(pannellumRef, viewerRef, annotations, viewerSize) 
   return{svgData,worldToScreen}
 }
 
-export function AnnShape({item,isPreview=false,selected=false,onClick,onDoubleClick}){
+export function AnnShape({item,isPreview=false,selected=false,showLabels=true,onClick,onDoubleClick}){
   const{segments,midScreen,start,end,color,type,label,id,rectCorners}=item
   const data = item.data || {}
   const opacity = data.opacity ?? 1
@@ -99,7 +99,7 @@ export function AnnShape({item,isPreview=false,selected=false,onClick,onDoubleCl
     return<line x1={pt.x-px} y1={pt.y-py} x2={pt.x+px} y2={pt.y+py} stroke={color} strokeWidth={2} opacity={opacity} strokeLinecap="round"/>
   }
   function MidLabel({pt}){
-    if(!label||!pt||type==='text')return null
+    if(!label||!pt||type==='text'||!showLabels)return null
     const w=label.length*8+18
     return<g opacity={opacity}><rect x={pt.x-w/2} y={pt.y-13} width={w} height={22} rx={5} fill="rgba(0,0,0,0.82)"/><text x={pt.x} y={pt.y+4} textAnchor="middle" fill={color} fontSize={13} fontWeight={700} fontFamily="Inter,sans-serif">{label}</text></g>
   }
@@ -115,13 +115,13 @@ export function AnnShape({item,isPreview=false,selected=false,onClick,onDoubleCl
     return<g key={id||'prev'} {...props}>
       {selected&&<polygon points={ptStr} fill="white" opacity={0.1}/>}
       <polygon points={ptStr} stroke={color} strokeWidth={sw} strokeOpacity={strokeOpacity} fill={color} fillOpacity={fillOpacity} strokeDasharray={dash}/>
-      {label&&<g opacity={opacity}><rect x={cx-label.length*4-6} y={cy-13} width={label.length*8+12} height={22} rx={5} fill="rgba(0,0,0,0.82)"/><text x={cx} y={cy+4} textAnchor="middle" fill={color} fontSize={13} fontWeight={700} fontFamily="Inter,sans-serif">{label}</text></g>}
+      {label&&showLabels&&<g opacity={opacity}><rect x={cx-label.length*4-6} y={cy-13} width={label.length*8+12} height={22} rx={5} fill="rgba(0,0,0,0.82)"/><text x={cx} y={cy+4} textAnchor="middle" fill={color} fontSize={13} fontWeight={700} fontFamily="Inter,sans-serif">{label}</text></g>}
     </g>
   }
 
   // TEXT
   if(type==='text'){
-    if(!start||!label)return null
+    if(!start||!label||!showLabels)return null
     const fontSize=data?.size||15
     const bg=data?.bg||'rgba(0,0,0,0.85)'
     const w=label.length*fontSize*0.62+16
