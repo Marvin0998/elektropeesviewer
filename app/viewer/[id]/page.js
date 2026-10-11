@@ -47,8 +47,9 @@ export default function ViewerPage() {
   const [drawStart, setDrawStart]     = useState(null)
   const [viewerSize, setViewerSize]   = useState({ w:800, h:600 })
 
-  // Text drag
-  const [draggingText, setDraggingText] = useState(null)
+  // Universal drag for any annotation
+  const [draggingAnn, setDraggingAnn] = useState(null)   // { ann, startWorld }
+  const draggingAnnRef = useRef(null)
 
   // Modals
   const [showLabelInput, setShowLabelInput]       = useState(false)
@@ -83,6 +84,9 @@ export default function ViewerPage() {
   const pannellumRef = useRef(null)
 
   const { svgData, worldToScreen } = useProjection(pannellumRef, viewerRef, annotations, viewerSize)
+
+  // Keep drag ref in sync so mouse handlers always have latest value
+  useEffect(() => { draggingAnnRef.current = draggingAnn }, [draggingAnn])
 
   useEffect(() => {
     async function load() {
@@ -173,11 +177,20 @@ export default function ViewerPage() {
   // ---- Maus ----
   function handleMouseDown(e) {
     if (activeTool==='select') {
-      // Text-Drag starten: Rechtsklick oder Ctrl+Klick auf selektierten Text
-      const selAnn = svgData.find(a => a.id===selected && a.type==='text')
-      if (selAnn && (e.button===2 || e.ctrlKey)) {
-        e.preventDefault()
-        setDraggingText(selAnn)
+      // Drag starten wenn eine Annotation ausgewählt ist und geklickt wird
+      if (selected) {
+        const selAnn = svgData.find(a => a.id === selected)
+        if (selAnn) {
+          const w = screenToWorld(e.clientX, e.clientY)
+          if (w) {
+            e.preventDefault()
+            e.stopPropagation()
+            const drag = { ann: selAnn, startWorld: w }
+            setDraggingAnn(drag)
+            draggingAnnRef.current = drag
+            return
+          }
+        }
       }
       return
     }
@@ -200,10 +213,8 @@ export default function ViewerPage() {
   }
 
   function handleMouseMove(e) {
-    // Text verschieben
-    if (draggingText) {
+    if (draggingAnnRef.current) {
       e.preventDefault()
-      // Visuelles Feedback: Annotation live verschieben (ohne DB)
       return
     }
     if (!drawing) return
@@ -213,14 +224,24 @@ export default function ViewerPage() {
   }
 
   async function handleMouseUp(e) {
-    // Text-Drop
-    if (draggingText) {
+    // Universal Drop: Annotation verschieben
+    if (draggingAnnRef.current) {
+      const { ann, startWorld } = draggingAnnRef.current
       const w = screenToWorld(e.clientX, e.clientY)
       if (w) {
-        await createClient().from('annotations').update({ x1:w.yaw, y1:w.pitch, x2:w.yaw, y2:w.pitch }).eq('id', draggingText.id)
+        const dYaw   = w.yaw   - startWorld.yaw
+        const dPitch = w.pitch - startWorld.pitch
+        const newX1  = ann.x1 + dYaw
+        const newY1  = ann.y1 + dPitch
+        const newX2  = ann.x2 + dYaw
+        const newY2  = ann.y2 + dPitch
+        await createClient().from('annotations')
+          .update({ x1: newX1, y1: newY1, x2: newX2, y2: newY2 })
+          .eq('id', ann.id)
         await loadAnnotations()
       }
-      setDraggingText(null)
+      setDraggingAnn(null)
+      draggingAnnRef.current = null
       return
     }
     if (!drawing) return
@@ -321,7 +342,7 @@ export default function ViewerPage() {
   }
 
   const isDrawTool = activeTool!=='select'
-  const cursorStyle = draggingText ? 'grabbing' : isDrawTool ? 'crosshair' : 'default'
+  const cursorStyle = draggingAnn ? 'grabbing' : (activeTool==='select' && selected) ? 'grab' : isDrawTool ? 'crosshair' : 'default'
 
   if(loading) return <><Navbar/><div className="spinner"/></>
 
@@ -351,8 +372,8 @@ export default function ViewerPage() {
           </div>
 
           <div style={{position:'absolute',bottom:12,left:'50%',transform:'translateX(-50%)',background:'rgba(0,0,0,0.65)',color:'white',padding:'6px 16px',borderRadius:20,fontSize:12,zIndex:30,whiteSpace:'nowrap',pointerEvents:'none'}}>
-            {activeTool==='select' && (selected && svgData.find(a=>a.id===selected&&(a.type==='text'||a.type==='rect'))
-              ? '→ Oben: ✎ Bearbeiten Button · Ctrl+Ziehen = Text verschieben'
+            {activeTool==='select' && (selected
+              ? '✋ Ziehen = Annotation verschieben · ✎ Bearbeiten für Text/Rechteck'
               : 'Ziehen = Drehen · Annotation anklicken = auswählen')}
             {activeTool==='measure' &&'↔ Klicken & Ziehen → Bemaßungslinie'}
             {activeTool==='arrow'   &&'➜ Klicken & Ziehen → Pfeil'}
@@ -381,9 +402,7 @@ export default function ViewerPage() {
           )}
 
           <div ref={viewerRef} style={{width:'100%',height:'100%'}}
-            onContextMenu={e=>{
-              if(selected && svgData.find(a=>a.id===selected&&a.type==='text')){e.preventDefault()}
-            }}
+            onContextMenu={e=>e.preventDefault()}
           />
           {/* Unsichtbarer Layer der Pannellum-Doppelklick-Zoom verhindert */}
           <div
@@ -396,14 +415,19 @@ export default function ViewerPage() {
             }}
           />
 
-          <svg
-            style={{position:'absolute',inset:0,width:'100%',height:'100%',zIndex:20,pointerEvents:isDrawTool||draggingText?'all':'none',cursor:cursorStyle}}
-            onMouseDown={e=>{
-              if(activeTool==='select'&&!draggingText) return
-              handleMouseDown(e)
-            }}
+          {/* Unsichtbarer Interaktions-Layer für Draw + Drag */}
+          <div
+            style={{position:'absolute',inset:0,zIndex:21,
+              pointerEvents: (isDrawTool || draggingAnn || (activeTool==='select'&&selected)) ? 'all' : 'none',
+              cursor: cursorStyle}}
+            onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
+            onContextMenu={e=>e.preventDefault()}
+          />
+
+          <svg
+            style={{position:'absolute',inset:0,width:'100%',height:'100%',zIndex:20,pointerEvents:'none',cursor:cursorStyle,userSelect:'none'}}
             onDoubleClick={e=>{
               e.preventDefault()
               e.stopPropagation()
@@ -431,7 +455,7 @@ export default function ViewerPage() {
             onContextMenu={e=>e.preventDefault()}
           >
             {/* Transparenter Hintergrund damit Pannellum Events bekommt im Select-Modus */}
-            {activeTool==='select'&&!draggingText&&<rect x="0" y="0" width="100%" height="100%" fill="transparent" style={{pointerEvents:'none'}}/>}
+            {activeTool==='select'&&!draggingAnn&&<rect x="0" y="0" width="100%" height="100%" fill="transparent" style={{pointerEvents:'none'}}/>}
             {/* Gespeicherte Annotations */}
             {svgData.map(item=>(
               <AnnShape key={item.id} item={item} selected={selected===item.id}
@@ -440,15 +464,19 @@ export default function ViewerPage() {
               />
             ))}
 
-            {/* Klick-Flächen für Linien im Select-Modus */}
-            {activeTool==='select'&&svgData.filter(i=>i.type!=='text'&&i.segments?.flat().length>1).map(item=>(
-              <polyline key={'hit-'+item.id}
-                points={item.segments.flat().map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')}
-                fill="none" stroke="transparent" strokeWidth={24}
-                style={{cursor:'pointer',pointerEvents:'all'}}
-                onClick={()=>setSelected(selected===item.id?null:item.id)}
-              />
-            ))}
+            {/* Klick-Flächen für alle Annotations im Select-Modus – immer aktiv */}
+            {activeTool==='select'&&svgData.map(item=>{
+              if(item.type==='text'||item.type==='rect') return null
+              if(!item.segments?.flat().length) return null
+              return(
+                <polyline key={'hit-'+item.id}
+                  points={item.segments.flat().map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')}
+                  fill="none" stroke="transparent" strokeWidth={24}
+                  style={{cursor:'pointer',pointerEvents:'all'}}
+                  onClick={e=>{e.stopPropagation();setSelected(selected===item.id?null:item.id)}}
+                />
+              )
+            })}
           </svg>
         </div>
 

@@ -81,7 +81,7 @@ export function AnnShape({item,isPreview=false,selected=false,onClick,onDoubleCl
   const opacity = data.opacity ?? 1
   const sw=selected?3:2
   const dash=isPreview?'8 4':undefined
-  const props={onClick,onDoubleClick,style:onClick?{cursor:'pointer'}:{}}
+  const props={onClick,onDoubleClick,style:onClick?{cursor:'pointer',pointerEvents:'all'}:{pointerEvents:'none'}}
 
   function ptsToStr(pts){return pts.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')}
   const firstSeg=segments?.[0],lastSeg=segments?.[segments.length-1]
