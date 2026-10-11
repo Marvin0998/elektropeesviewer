@@ -88,17 +88,17 @@ export function AnnShape({item,isPreview=false,selected=false,showLabels=true,on
   const p_start2=firstSeg?.length>=2?firstSeg[1]:null
   const p_end2=lastSeg?.length>=2?lastSeg[lastSeg.length-2]:null
 
-  function Arrow({p1,p2}){
+  function arrow(p1,p2){
     if(!p1||!p2)return null
     const a=Math.atan2(p2.y-p1.y,p2.x-p1.x)*180/Math.PI
     return<polygon points="-10,5 0,0 -10,-5" fill={color} opacity={opacity} transform={`translate(${p2.x},${p2.y}) rotate(${a})`}/>
   }
-  function Tick({pt,p2}){
+  function tick(pt,p2){
     if(!pt||!p2)return null
     const a=Math.atan2(p2.y-pt.y,p2.x-pt.x),px=Math.sin(a)*12,py=-Math.cos(a)*12
     return<line x1={pt.x-px} y1={pt.y-py} x2={pt.x+px} y2={pt.y+py} stroke={color} strokeWidth={2} opacity={opacity} strokeLinecap="round"/>
   }
-  function MidLabel({pt}){
+  function midLabel(pt){
     if(!label||!pt||type==='text')return null
     const w=label.length*8+18
     return<g opacity={opacity} style={{display:showLabels?undefined:'none'}}><rect x={pt.x-w/2} y={pt.y-13} width={w} height={22} rx={5} fill="rgba(0,0,0,0.82)"/><text x={pt.x} y={pt.y+4} textAnchor="middle" fill={color} fontSize={13} fontWeight={700} fontFamily="Inter,sans-serif">{label}</text></g>
@@ -138,8 +138,8 @@ export function AnnShape({item,isPreview=false,selected=false,showLabels=true,on
   return<g key={id||'prev'} {...props} opacity={opacity}>
     {selected&&segments.map((seg,i)=><polyline key={'hl'+i} points={ptsToStr(seg)} fill="none" stroke="white" strokeWidth={8} opacity={0.2}/>)}
     {segments.map((seg,i)=><polyline key={i} points={ptsToStr(seg)} fill="none" stroke={color} strokeWidth={sw} strokeDasharray={dash} strokeLinecap="round" strokeLinejoin="round"/>)}
-    {type==='measure'&&<><Arrow p1={p_start2} p2={start}/><Arrow p1={p_end2} p2={end}/><Tick pt={start} p2={end}/><Tick pt={end} p2={start}/></>}
-    {type==='arrow'&&<Arrow p1={p_end2} p2={end}/>}
-    <MidLabel pt={midScreen}/>
+    {type==='measure'&&<>{arrow(p_start2,start)}{arrow(p_end2,end)}{tick(start,end)}{tick(end,start)}</>}
+    {type==='arrow'&&arrow(p_end2,end)}
+    {midLabel(midScreen)}
   </g>
 }
