@@ -99,9 +99,9 @@ export function AnnShape({item,isPreview=false,selected=false,showLabels=true,on
     return<line x1={pt.x-px} y1={pt.y-py} x2={pt.x+px} y2={pt.y+py} stroke={color} strokeWidth={2} opacity={opacity} strokeLinecap="round"/>
   }
   function MidLabel({pt}){
-    if(!label||!pt||type==='text'||!showLabels)return null
+    if(!label||!pt||type==='text')return null
     const w=label.length*8+18
-    return<g opacity={opacity}><rect x={pt.x-w/2} y={pt.y-13} width={w} height={22} rx={5} fill="rgba(0,0,0,0.82)"/><text x={pt.x} y={pt.y+4} textAnchor="middle" fill={color} fontSize={13} fontWeight={700} fontFamily="Inter,sans-serif">{label}</text></g>
+    return<g opacity={opacity} style={{display:showLabels?undefined:'none'}}><rect x={pt.x-w/2} y={pt.y-13} width={w} height={22} rx={5} fill="rgba(0,0,0,0.82)"/><text x={pt.x} y={pt.y+4} textAnchor="middle" fill={color} fontSize={13} fontWeight={700} fontFamily="Inter,sans-serif">{label}</text></g>
   }
 
   // RECHTECK
@@ -110,22 +110,22 @@ export function AnnShape({item,isPreview=false,selected=false,showLabels=true,on
     const ptStr=rectCorners.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
     const cx=rectCorners.reduce((s,p)=>s+p.x,0)/4
     const cy=rectCorners.reduce((s,p)=>s+p.y,0)/4
-    const fillOpacity=(data?.fillOpacity??0.5)*opacity  // füllfarbe × gesamtopacity
+    const fillOpacity=(data?.fillOpacity??0.5)*opacity
     const strokeOpacity=opacity
     return<g key={id||'prev'} {...props}>
       {selected&&<polygon points={ptStr} fill="white" opacity={0.1}/>}
       <polygon points={ptStr} stroke={color} strokeWidth={sw} strokeOpacity={strokeOpacity} fill={color} fillOpacity={fillOpacity} strokeDasharray={dash}/>
-      {label&&showLabels&&<g opacity={opacity}><rect x={cx-label.length*4-6} y={cy-13} width={label.length*8+12} height={22} rx={5} fill="rgba(0,0,0,0.82)"/><text x={cx} y={cy+4} textAnchor="middle" fill={color} fontSize={13} fontWeight={700} fontFamily="Inter,sans-serif">{label}</text></g>}
+      {label&&<g opacity={opacity} style={{display:showLabels?undefined:'none'}}><rect x={cx-label.length*4-6} y={cy-13} width={label.length*8+12} height={22} rx={5} fill="rgba(0,0,0,0.82)"/><text x={cx} y={cy+4} textAnchor="middle" fill={color} fontSize={13} fontWeight={700} fontFamily="Inter,sans-serif">{label}</text></g>}
     </g>
   }
 
   // TEXT
   if(type==='text'){
-    if(!start||!label||!showLabels)return null
+    if(!start||!label)return null
     const fontSize=data?.size||15
     const bg=data?.bg||'rgba(0,0,0,0.85)'
     const w=label.length*fontSize*0.62+16
-    return<g key={id||'prev'} {...props} opacity={opacity}>
+    return<g key={id||'prev'} {...props} opacity={opacity} style={{display:showLabels?undefined:'none'}}>
       {selected&&<rect x={start.x-6} y={start.y-fontSize-8} width={w+8} height={fontSize+16} rx={7} fill="#4f6ef7" opacity={0.3}/>}
       <rect x={start.x-4} y={start.y-fontSize-4} width={w} height={fontSize+12} rx={5} fill={bg}/>
       <text x={start.x+4} y={start.y+4} fill={color} fontSize={fontSize} fontWeight={700} fontFamily="Inter,sans-serif">{label}</text>
